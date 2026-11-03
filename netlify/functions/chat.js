@@ -14,26 +14,37 @@ exports.handler = async (event) => {
     parts: [{ text: String(m.content || "").slice(0, 4000) }],
   }));
 
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-  try {
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-        body: JSON.stringify({ systemInstruction: { parts: [{ text: SYSTEM }] }, contents }),
+  const models = [...new Set([
+    process.env.GEMINI_MODEL,
+    "gemini-2.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-2.5-flash",
+    "gemini-3.8-flash",
+  ].filter(Boolean))];
+
+  let last = { status: 503, error: "busy" };
+  for (const model of models) {
+    try {
+      const r = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+          body: JSON.stringify({ systemInstruction: { parts: [{ text: SYSTEM }] }, contents }),
+        }
+      );
+      const data = await r.json();
+      if (r.ok) {
+        const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text).join("");
+        if (text) return json(200, { reply: text });
       }
-    );
-    const data = await r.json();
-    if (!r.ok) {
-      const limit = r.status === 429;
-      return json(r.status, { error: limit ? "Aaj ki free limit khatam ho gayi, thodi der baad try karo." : (data.error?.message || "Gemini error") });
+      last = { status: r.status, error: data.error?.message || "Gemini error" };
+    } catch (e) {
+      last = { status: 500, error: "Server error" };
     }
-    const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text).join("") || "Koi jawab nahi mila, dobara try karo.";
-    return json(200, { reply: text });
-  } catch (e) {
-    return json(500, { error: "Server error, dobara try karo." });
   }
+  const limit = last.status === 429;
+  return json(limit ? 429 : 503, { error: limit ? "Aaj ki free limit khatam ho gayi, thodi der baad try karo." : "Gemini abhi bahut busy hai, 1-2 minute baad dobara try karo." });
 };
 
 const json = (statusCode, obj) => ({
