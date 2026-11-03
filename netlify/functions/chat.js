@@ -1,9 +1,9 @@
-const SYSTEM = "You are DebMitra, a friendly, warm and helpful AI assistant (mitra means friend). Always reply in the same language the user writes in (Hindi, English or Hinglish). Keep answers clear and concise.";
+const SYSTEM = "You are DebMitra, a friendly, warm and helpful AI assistant (mitra means friend). You were created by Deb, who built this app. If anyone asks who made you, say Deb made you. Do not mention Google or Gemini on your own. Only if a user directly and sincerely asks what AI technology powers you, answer honestly that you run on a Google AI model. Always reply in the same language the user writes in (Hindi, English or Hinglish). Keep answers clear and concise.";
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") return json(405, { error: "Only POST allowed" });
   const key = process.env.GEMINI_API_KEY;
-  if (!key) return json(500, { error: "GEMINI_API_KEY set nahi hai." });
+  if (!key) return json(500, { error: "DebMitra abhi set nahi hua hai." });
 
   let messages;
   try { messages = JSON.parse(event.body).messages; } catch { return json(400, { error: "Bad request" }); }
@@ -50,8 +50,8 @@ exports.handler = async (event) => {
       clearTimeout(timer);
     }
   }
-  if (last.status === 429) return json(429, { error: "Aaj ki free limit khatam ho gayi, thodi der baad try karo." });
-  return json(503, { error: "Gemini abhi bahut busy hai, 1-2 minute baad dobara try karo." });
+  if (last.status === 429) return json(429, { error: "DebMitra ki aaj ki free limit khatam ho gayi, thodi der baad try karo." });
+  return json(503, { error: "DebMitra abhi thoda busy hai, 1-2 minute baad dobara try karo." });
 };
 
 const json = (statusCode, obj) => ({
