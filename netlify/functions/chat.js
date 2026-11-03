@@ -19,11 +19,15 @@ exports.handler = async (event) => {
     "gemini-2.5-flash-lite",
     "gemini-3.1-flash-lite",
     "gemini-2.5-flash",
-    "gemini-3.8-flash",
   ].filter(Boolean))];
 
-  let last = { status: 503, error: "busy" };
+  const start = Date.now();
+  let last = { status: 503 };
   for (const model of models) {
+    const left = 8500 - (Date.now() - start);
+    if (left < 1500) break;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), Math.min(left, 5000));
     try {
       const r = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -31,6 +35,7 @@ exports.handler = async (event) => {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": key },
           body: JSON.stringify({ systemInstruction: { parts: [{ text: SYSTEM }] }, contents }),
+          signal: ctrl.signal,
         }
       );
       const data = await r.json();
@@ -38,13 +43,15 @@ exports.handler = async (event) => {
         const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text).join("");
         if (text) return json(200, { reply: text });
       }
-      last = { status: r.status, error: data.error?.message || "Gemini error" };
+      last = { status: r.status };
     } catch (e) {
-      last = { status: 500, error: "Server error" };
+      last = { status: 503 };
+    } finally {
+      clearTimeout(timer);
     }
   }
-  const limit = last.status === 429;
-  return json(limit ? 429 : 503, { error: limit ? "Aaj ki free limit khatam ho gayi, thodi der baad try karo." : "Gemini abhi bahut busy hai, 1-2 minute baad dobara try karo." });
+  if (last.status === 429) return json(429, { error: "Aaj ki free limit khatam ho gayi, thodi der baad try karo." });
+  return json(503, { error: "Gemini abhi bahut busy hai, 1-2 minute baad dobara try karo." });
 };
 
 const json = (statusCode, obj) => ({
