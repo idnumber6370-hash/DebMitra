@@ -6,7 +6,7 @@ exports.handler = async (event) => {
   const groqKey = process.env.GROQ_API_KEY;
   const orKey = process.env.OPENROUTER_API_KEY;
   const gemKey = process.env.GEMINI_API_KEY;
-  if (!groqKey && !orKey && !gemKey) return json(500, { error: "DebMitra abhi set nahi hua hai." });
+  if (!groqKey && !orKey && !gemKey && !process.env.CUSTOM_API_KEY) return json(500, { error: "DebMitra abhi set nahi hua hai." });
 
   let body;
   try { body = JSON.parse(event.body); } catch { return json(400, { error: "Bad request" }); }
@@ -87,6 +87,18 @@ exports.handler = async (event) => {
   }
 
   // ----- Sirf text -----
+  // Custom (dost wali) API: sirf text ke liye, kabhi photo/PDF nahi bhejta
+  const customOk = process.env.CUSTOM_API_URL && process.env.CUSTOM_API_KEY && process.env.CUSTOM_API_MODEL && !doc;
+  const tryCustom = async () => {
+    if (!customOk) return null;
+    const t = await openai(process.env.CUSTOM_API_URL, process.env.CUSTOM_API_KEY, process.env.CUSTOM_API_MODEL, [{ role: "system", content: system }, ...history]);
+    if (t) console.log("custom provider used");
+    return t;
+  };
+  if (process.env.CUSTOM_FIRST === "1") {
+    const t = await tryCustom();
+    if (t) return json(200, { reply: t });
+  }
   if (groqKey) {
     for (const model of ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]) {
       const t = await openai("https://api.groq.com/openai/v1/chat/completions", groqKey, model, [{ role: "system", content: system }, ...history]);
@@ -108,6 +120,11 @@ exports.handler = async (event) => {
       }
       if (!res.skip) last = { status: res.status };
     }
+  }
+
+  if (process.env.CUSTOM_FIRST !== "1") {
+    const t = await tryCustom();
+    if (t) return json(200, { reply: t });
   }
 
   if (last.status === 429) return json(429, { error: "DebMitra ki aaj ki free limit khatam ho gayi, thodi der baad try karo." });
