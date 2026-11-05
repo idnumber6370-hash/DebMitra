@@ -1,24 +1,59 @@
-const SYSTEM = "You are DebMitra, a friendly, warm and helpful AI assistant (mitra means friend). You were created by Deb, who built this app. If anyone asks who made you, say Deb made you. Do not mention Google, Gemini, Groq, Llama or any other company or model name on your own. Only if a user directly and sincerely asks what AI technology powers you, answer honestly that you run on a third-party AI language model. Always reply in the same language the user writes in (Hindi, English or Hinglish). Keep answers clear and concise. You can understand photos and PDFs that the user attaches.";
+const BASE = "You are DebMitra, a friendly, warm and helpful AI assistant (mitra means friend). You were created by Deb, who built this app. If anyone asks who made you, say Deb made you. Do not mention Google, Gemini, Groq, Llama, NVIDIA or any other company or model name on your own. Only if a user directly and sincerely asks what AI technology powers you, answer honestly that you run on a third-party AI language model. Keep answers clear and reasonably concise. You can understand photos and PDFs that the user attaches. Use simple formatting: short paragraphs, **bold** for key words, and - bullets for lists.";
+
+const MODES = {
+  friend: "Mode: friendly buddy. Be warm, casual and supportive.",
+  tutor: "Mode: patient tutor (padhai ka teacher). Explain step by step in simple words with small examples, and end with one short question to check understanding.",
+  coder: "Mode: coding helper. Give short, correct code inside code blocks, then a brief explanation. Ask for missing details only if really needed.",
+  funny: "Mode: funny friend. Use light, playful humour and gentle jokes, but stay kind, never insulting, and still give correct answers.",
+};
+const LANGS = {
+  auto: "Always reply in the same language and script the user writes in (Hindi, English, Hinglish or Odia).",
+  hi: "Always reply in Hindi using Devanagari script.",
+  en: "Always reply in simple English.",
+  or: "Always reply in Odia (ଓଡ଼ିଆ) using Odia script. Keep sentences short and simple. Even if the user wrote in another language, reply in Odia.",
+};
+
+// ---- Rate limit: ek user (IP) ke liye 1 minute mein max 10 message ----
+const LIMIT = 10, WINDOW = 60000;
+const hits = new Map();
+function limited(ip, rid) {
+  if (!ip) return false;
+  const now = Date.now();
+  const a = (hits.get(ip) || []).filter((h) => now - h.t < WINDOW);
+  if (rid && a.some((h) => h.rid === rid)) { hits.set(ip, a); return false; } // retry same message: dobara nahi ginte
+  if (a.length >= LIMIT) { hits.set(ip, a); return true; }
+  a.push({ t: now, rid });
+  hits.set(ip, a);
+  if (hits.size > 5000) for (const [k, v] of hits) if (!v.length || now - v[v.length - 1].t > WINDOW) hits.delete(k);
+  return false;
+}
+const clientIp = (h = {}) =>
+  h["x-nf-client-connection-ip"] || h["client-ip"] || (h["x-forwarded-for"] || "").split(",")[0].trim() || "";
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") return json(405, { error: "Only POST allowed" });
 
   const groqKey = process.env.GROQ_API_KEY;
+  const nvKey = process.env.NVIDIA_API_KEY;
   const orKey = process.env.OPENROUTER_API_KEY;
   const gemKey = process.env.GEMINI_API_KEY;
-  if (!groqKey && !orKey && !gemKey && !process.env.CUSTOM_API_KEY) return json(500, { error: "DebMitra abhi set nahi hua hai." });
+  if (!groqKey && !nvKey && !orKey && !gemKey && !process.env.CUSTOM_API_KEY) return json(500, { error: "DebMitra abhi set nahi hua hai." });
 
   let body;
   try { body = JSON.parse(event.body); } catch { return json(400, { error: "Bad request" }); }
-  const { messages, image, doc } = body || {};
+  const { messages, image, doc, lang, mode, rid } = body || {};
   if (!Array.isArray(messages) || !messages.length) return json(400, { error: "Message khali hai" });
+
+  if (limited(clientIp(event.headers), typeof rid === "string" ? rid.slice(0, 60) : "")) {
+    return json(429, { error: "Bahut tez! 1 minute mein sirf 10 message bhej sakte ho. Thoda ruko aur phir bhejo. 🙂" });
+  }
 
   const history = messages.slice(-20).map((m) => ({
     role: m.role === "assistant" ? "assistant" : "user",
     content: String(m.content || "").slice(0, 4000),
   }));
 
-  let system = SYSTEM;
+  let system = BASE + "\n" + (MODES[mode] || MODES.friend) + "\n" + (LANGS[lang] || LANGS.auto);
   if (doc && doc.text) {
     system += `\n\nThe user attached a document named "${String(doc.name || "document").slice(0, 100)}". Use it to answer. Document text:\n"""\n${String(doc.text).slice(0, 9000)}\n"""`;
   }
@@ -45,35 +80,43 @@ exports.handler = async (event) => {
   }
 
   const openai = async (url, key, model, msgs, extra = {}) => {
-    const res = await call(url, { Authorization: "Bearer " + key, ...extra }, { model, messages: msgs, temperature: 0.7, max_tokens: 1024 });
+    const payload = { model, messages: msgs, temperature: 0.7, max_tokens: 1024 };
+    if (/gpt-oss/.test(model) && url.includes("api.groq.com")) { payload.max_tokens = 2048; payload.reasoning_effort = "low"; }
+    const res = await call(url, { Authorization: "Bearer " + key, ...extra }, payload);
     if (res.ok) {
-      const t = res.data?.choices?.[0]?.message?.content;
+      let t = res.data?.choices?.[0]?.message?.content;
+      if (t) t = t.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
       if (t) return t;
     }
-    if (!res.skip) last = { status: res.status };
+    if (!res.skip) {
+      last = { status: res.status };
+      console.log("fail:", model, res.status, String(res.data?.error?.message || "").slice(0, 140));
+    }
     return null;
   };
+  const gemModels = () => [...new Set([process.env.GEMINI_MODEL, "gemini-2.5-flash-lite", "gemini-3.1-flash-lite"].filter(Boolean))];
 
   // ----- Photo ke saath -----
   if (hasImage) {
     const prev = history.slice(0, -1);
     const lastMsg = history[history.length - 1];
     if (groqKey) {
-      const vModel = process.env.GROQ_VISION_MODEL || "meta-llama/llama-4-scout-17b-16e-instruct";
       const msgs = [
         { role: "system", content: system },
         ...prev,
         { role: "user", content: [{ type: "text", text: lastMsg.content }, { type: "image_url", image_url: { url: image } }] },
       ];
-      const t = await openai("https://api.groq.com/openai/v1/chat/completions", groqKey, vModel, msgs);
-      if (t) return json(200, { reply: t });
+      for (const vModel of [...new Set([process.env.GROQ_VISION_MODEL, "qwen/qwen3.6-27b"].filter(Boolean))]) {
+        const t = await openai("https://api.groq.com/openai/v1/chat/completions", groqKey, vModel, msgs);
+        if (t) return json(200, { reply: t });
+      }
     }
     if (gemKey) {
       const m = image.match(/^data:(image\/[a-zA-Z+.-]+);base64,(.*)$/);
       if (m) {
         const contents = prev.map((x) => ({ role: x.role === "assistant" ? "model" : "user", parts: [{ text: x.content }] }));
         contents.push({ role: "user", parts: [{ text: lastMsg.content }, { inline_data: { mime_type: m[1], data: m[2] } }] });
-        for (const model of [...new Set([process.env.GEMINI_MODEL, "gemini-2.5-flash-lite", "gemini-3.1-flash-lite"].filter(Boolean))]) {
+        for (const model of gemModels()) {
           const res = await call(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { "x-goog-api-key": gemKey }, { systemInstruction: { parts: [{ text: system }] }, contents });
           if (res.ok) {
             const t = res.data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join("");
@@ -87,32 +130,27 @@ exports.handler = async (event) => {
   }
 
   // ----- Sirf text -----
-  // Custom (dost wali) API: sirf text ke liye, kabhi photo/PDF nahi bhejta
-  const customOk = process.env.CUSTOM_API_URL && process.env.CUSTOM_API_KEY && process.env.CUSTOM_API_MODEL && !doc;
-  const tryCustom = async () => {
-    if (!customOk) return null;
-    const t = await openai(process.env.CUSTOM_API_URL, process.env.CUSTOM_API_KEY, process.env.CUSTOM_API_MODEL, [{ role: "system", content: system }, ...history]);
-    if (t) console.log("custom provider used");
-    return t;
-  };
-  if (process.env.CUSTOM_FIRST === "1") {
-    const t = await tryCustom();
-    if (t) return json(200, { reply: t });
-  }
+  const sysMsg = { role: "system", content: system };
   if (groqKey) {
-    for (const model of ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]) {
-      const t = await openai("https://api.groq.com/openai/v1/chat/completions", groqKey, model, [{ role: "system", content: system }, ...history]);
+    for (const model of [...new Set([process.env.GROQ_MODEL, "openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b"].filter(Boolean))]) {
+      const t = await openai("https://api.groq.com/openai/v1/chat/completions", groqKey, model, [sysMsg, ...history]);
+      if (t) return json(200, { reply: t });
+    }
+  }
+  if (nvKey) {
+    for (const model of [...new Set([process.env.NVIDIA_MODEL, "meta/llama-3.3-70b-instruct", "openai/gpt-oss-120b"].filter(Boolean))]) {
+      const t = await openai("https://integrate.api.nvidia.com/v1/chat/completions", nvKey, model, [sysMsg, ...history]);
       if (t) return json(200, { reply: t });
     }
   }
   if (orKey) {
     const model = process.env.OPENROUTER_MODEL || "meta-llama/llama-3.3-70b-instruct:free";
-    const t = await openai("https://openrouter.ai/api/v1/chat/completions", orKey, model, [{ role: "system", content: system }, ...history], { "X-Title": "DebMitra" });
+    const t = await openai("https://openrouter.ai/api/v1/chat/completions", orKey, model, [sysMsg, ...history], { "X-Title": "DebMitra" });
     if (t) return json(200, { reply: t });
   }
   if (gemKey) {
     const contents = history.map((x) => ({ role: x.role === "assistant" ? "model" : "user", parts: [{ text: x.content }] }));
-    for (const model of [...new Set([process.env.GEMINI_MODEL, "gemini-2.5-flash-lite", "gemini-3.1-flash-lite"].filter(Boolean))]) {
+    for (const model of gemModels()) {
       const res = await call(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { "x-goog-api-key": gemKey }, { systemInstruction: { parts: [{ text: system }] }, contents });
       if (res.ok) {
         const t = res.data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join("");
@@ -121,9 +159,8 @@ exports.handler = async (event) => {
       if (!res.skip) last = { status: res.status };
     }
   }
-
-  if (process.env.CUSTOM_FIRST !== "1") {
-    const t = await tryCustom();
+  if (process.env.CUSTOM_API_URL && process.env.CUSTOM_API_KEY && process.env.CUSTOM_API_MODEL) {
+    const t = await openai(process.env.CUSTOM_API_URL, process.env.CUSTOM_API_KEY, process.env.CUSTOM_API_MODEL, [sysMsg, ...history]);
     if (t) return json(200, { reply: t });
   }
 
