@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>DebMitra – Tumhara AI Dost</title>
-<meta name="theme-color" content="#8b5cf6">
+<meta name="theme-color" content="#00071a">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/icon-192.png">
@@ -17,15 +17,25 @@ header{padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top,0px));b
 header .lg{width:38px;height:38px;border-radius:10px;flex:none}
 header .t{flex:1;font-weight:700;font-size:18px;line-height:1.1}
 header .t small{display:block;font-weight:400;font-size:12px;opacity:.9}
-.hb{background:rgba(255,255,255,.22);border:0;color:#fff;border-radius:50%;width:38px;height:38px;font-size:17px;padding:0;box-shadow:none;cursor:pointer}
-.hb.txt{font-size:13px;font-weight:700;border-radius:19px;width:auto;padding:0 12px}
+.hb{background:rgba(255,255,255,.22);border:0;color:#fff;border-radius:50%;width:38px;height:38px;font-size:17px;padding:0;cursor:pointer;flex:none}
+#panel{background:rgba(255,255,255,.92);padding:10px 14px;display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center;font-size:14px;border-bottom:1px solid #e5def5}
+#panel[hidden]{display:none}
+#panel select{padding:8px;border-radius:10px;border:2px solid #c4b5fd;background:#fff;font-size:15px;color:#1f1d1a}
+#panel .row{grid-column:1/3;display:flex;gap:8px}
+.pb{flex:1;padding:9px;border-radius:10px;border:2px solid #c4b5fd;background:#fff;color:#6d28d9;font-weight:600;font-size:14px}
+.pb[hidden]{display:none}
 #chat{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
-.m{max-width:86%;padding:10px 14px;border-radius:16px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;font-size:15.5px}
+.m{max-width:88%;padding:10px 14px;border-radius:16px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;font-size:15.5px}
 .u{align-self:flex-end;background:linear-gradient(135deg,#8b5cf6,#ec4899);color:#fff;border-bottom-right-radius:4px;box-shadow:0 3px 10px rgba(139,92,246,.35)}
 .u img{display:block;max-width:100%;max-height:180px;border-radius:10px;margin-bottom:6px}
 .a{align-self:flex-start;border-left:5px solid #06b6d4;background:#e6fbff;border-bottom-left-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .a:nth-of-type(3n+2){border-left-color:#f59e0b;background:#fff4dc}
 .a:nth-of-type(3n+3){border-left-color:#10b981;background:#e3f9ee}
+.a code{background:rgba(0,0,0,.08);padding:1px 5px;border-radius:5px;font-family:ui-monospace,Menlo,monospace;font-size:14px}
+.a pre{margin:6px 0;background:#10131a;color:#e8e8f0;padding:10px;border-radius:10px;overflow-x:auto;white-space:pre}
+.a pre code{background:none;padding:0;color:inherit}
+.act{display:flex;gap:6px;margin-top:6px}
+.act button{background:rgba(0,0,0,.07);color:inherit;border:0;border-radius:12px;padding:3px 10px;font-size:13px;font-weight:500}
 .dots{display:inline-flex;gap:5px;padding:4px 2px}
 .dots i{width:8px;height:8px;border-radius:50%;background:#8b5cf6;animation:b 1.2s infinite ease-in-out}
 .dots i:nth-child(2){background:#ec4899;animation-delay:.18s}
@@ -35,7 +45,7 @@ header .t small{display:block;font-weight:400;font-size:12px;opacity:.9}
 #chip{display:flex;align-items:center;gap:8px;margin:0 12px;padding:6px 10px;background:#fff;border:2px solid #c4b5fd;border-radius:14px;font-size:14px}
 #chip[hidden]{display:none}
 #chip span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#chip button{background:none;color:#6d28d9;box-shadow:none;padding:0 6px;font-size:18px}
+#chip button{background:none;color:#6d28d9;padding:0 6px;font-size:18px}
 form{display:flex;gap:6px;align-items:center;padding:8px 10px calc(72px + env(safe-area-inset-bottom,0px));background:rgba(255,255,255,.55);backdrop-filter:blur(8px)}
 input[type=text]{flex:1;min-width:0;padding:12px 14px;border-radius:22px;border:2px solid #c4b5fd;background:#fff;color:#1f1d1a;font-size:16px}
 input[type=text]:focus{outline:0;border-color:#ec4899}
@@ -45,23 +55,45 @@ button{border:0;color:#fff;font-weight:600}
 @keyframes p{50%{box-shadow:0 0 0 8px rgba(239,68,68,.2)}}
 #send{padding:0 16px;height:42px;border-radius:22px;background:linear-gradient(135deg,#f97316,#ec4899);font-size:15px;box-shadow:0 3px 10px rgba(249,115,22,.4);flex:none}
 #send:disabled{opacity:.5}
+#toast{position:fixed;left:50%;bottom:130px;transform:translateX(-50%);background:#1f1d1a;color:#fff;padding:10px 16px;border-radius:14px;font-size:14px;max-width:90%;text-align:center;opacity:0;pointer-events:none;transition:opacity .25s;z-index:9}
+#toast.show{opacity:.95}
 @media (prefers-color-scheme:dark){
 body{background:linear-gradient(160deg,#2a1a3a 0%,#1a2140 50%,#12302b 100%);color:#f1ede6}
 .a{background:#143a42;color:#f1ede6}.a:nth-of-type(3n+2){background:#40321a}.a:nth-of-type(3n+3){background:#15392a}
 .hint{color:#c4b5fd}form{background:rgba(0,0,0,.35)}
-input[type=text],#chip{background:#262320;color:#f1ede6;border-color:#6d28d9}
+input[type=text],#chip,#panel select,.pb{background:#262320;color:#f1ede6;border-color:#6d28d9}
+#panel{background:rgba(20,16,30,.95);color:#f1ede6;border-color:#38305a}
 .rb{background:#262320;color:#c4b5fd;border-color:#6d28d9}
 }
 </style>
 </head>
 <body>
 <header>
-  <img src="/icon-192.png" alt="" class="lg"><div class="t">DebMitra<small>tumhara AI dost</small></div>
-  <button class="hb" id="inst" hidden title="App install karo">📲</button>
-  <button class="hb txt" id="lang" title="Voice ki bhasha">हिं</button>
+  <img src="/icon-192.png" alt="" class="lg">
+  <div class="t">DebMitra<small>tumhara AI dost</small></div>
   <button class="hb" id="spk" title="Jawab bol ke sunao">🔇</button>
-  <button class="hb" id="clr" title="Nayi chat">🗑</button>
+  <button class="hb" id="gear" title="Settings">⚙️</button>
 </header>
+<div id="panel" hidden>
+  <label for="selLang">Bhasha</label>
+  <select id="selLang">
+    <option value="auto">Auto (jaise main likhun)</option>
+    <option value="hi">हिन्दी</option>
+    <option value="en">English</option>
+    <option value="or">ଓଡ଼ିଆ (Odia)</option>
+  </select>
+  <label for="selMode">Mode</label>
+  <select id="selMode">
+    <option value="friend">😊 Dost</option>
+    <option value="tutor">📚 Padhai ka tutor</option>
+    <option value="coder">💻 Coder</option>
+    <option value="funny">😄 Funny</option>
+  </select>
+  <div class="row">
+    <button type="button" class="pb" id="inst" hidden>📲 App install</button>
+    <button type="button" class="pb" id="clr">🗑 Nayi chat</button>
+  </div>
+</div>
 <div id="chat"></div>
 <div id="chip" hidden><span id="chipt"></span><button type="button" id="chipx">✕</button></div>
 <form id="f">
@@ -71,48 +103,100 @@ input[type=text],#chip{background:#262320;color:#f1ede6;border-color:#6d28d9}
   <button id="send">Send</button>
 </form>
 <input type="file" id="file" accept="image/*,application/pdf" hidden>
+<div id="toast"></div>
 <script>
 const $=id=>document.getElementById(id);
 const chat=$('chat'),q=$('q'),send=$('send'),chip=$('chip');
-const KEY='debmitra_v2';
-let st={msgs:[],doc:null},pending=null,speakOn=false,busy=false,vlang='hi-IN';
+const KEY='debmitra_v2',SKEY='debmitra_set';
+let st={msgs:[],doc:null},set={lang:'auto',mode:'friend',speak:false},pending=null,busy=false,sent=[];
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.msgs))st=s}catch(e){}
+try{const s=JSON.parse(localStorage.getItem(SKEY));if(s)set=Object.assign(set,s)}catch(e){}
 function save(){try{st.msgs=st.msgs.slice(-60);localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+function saveSet(){try{localStorage.setItem(SKEY,JSON.stringify(set))}catch(e){}}
 function scroll(){chat.scrollTop=chat.scrollHeight}
-function clean(t){return String(t).replace(/\*\*/g,'').replace(/^\s*[*-]\s+/gm,'• ').replace(/^#+\s*/gm,'')}
-function add(cls,t,img){
-  const d=document.createElement('div');d.className='m '+cls;
+let tt;function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),3500)}
+/* text helpers */
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function md(s){
+  s=esc(String(s));const blocks=[];
+  s=s.replace(/```[a-zA-Z0-9]*\n?([\s\S]*?)```/g,(m,c)=>{blocks.push('<pre><code>'+c.replace(/\n$/,'')+'</code></pre>');return '\u0001'+(blocks.length-1)+'\u0001'});
+  s=s.replace(/`([^`\n]+)`/g,'<code>$1</code>');
+  s=s.replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>');
+  s=s.replace(/(^|\n)#{1,6}\s*(.+)/g,'$1<b>$2</b>');
+  s=s.replace(/(^|\n)[ \t]*[*-][ \t]+/g,'$1• ');
+  return s.replace(/\u0001(\d+)\u0001/g,(m,i)=>blocks[i]);
+}
+function plain(t){return String(t).replace(/```[a-zA-Z0-9]*\n?/g,'').replace(/\*\*/g,'').replace(/`/g,'').replace(/^#+\s*/gm,'').replace(/^\s*[*-]\s+/gm,'• ')}
+/* copy / share */
+async function copy(t){try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(x){}a.remove()}toast('Copy ho gaya ✅')}
+function share(t){if(navigator.share)navigator.share({title:'DebMitra',text:plain(t)+'\n\n— DebMitra: '+location.origin}).catch(()=>{});else copy(plain(t))}
+function actions(t){
+  const d=document.createElement('div');d.className='act';
+  const b1=document.createElement('button');b1.textContent='📋 Copy';b1.type='button';b1.onclick=()=>copy(plain(t));
+  const b2=document.createElement('button');b2.textContent='📤 Share';b2.type='button';b2.onclick=()=>share(t);
+  d.append(b1,b2);return d;
+}
+/* bubbles */
+function addUser(t,img){
+  const d=document.createElement('div');d.className='m u';
   if(img){const i=document.createElement('img');i.src=img;d.appendChild(i)}
-  const s=document.createElement('span');s.textContent=t;d.appendChild(s);
-  chat.appendChild(d);scroll();return d;
+  const s=document.createElement('span');s.textContent=t;d.appendChild(s);chat.appendChild(d);scroll();
+}
+function addBot(t){
+  const d=document.createElement('div');d.className='m a';
+  const b=document.createElement('span');b.className='body';d.appendChild(b);chat.appendChild(d);
+  if(t!=null){b.innerHTML=md(t);d.appendChild(actions(t))}
+  scroll();return{el:d,body:b};
 }
 function hello(){
   chat.innerHTML='';
-  if(!st.msgs.length){const h=document.createElement('div');h.className='hint';h.textContent='Namaste! Main DebMitra hoon, tumhara AI dost. Kuch bhi pooche — likh ke, bol ke 🎤, ya photo/PDF 📎 bhej ke. 😊';chat.appendChild(h);return}
-  st.msgs.forEach(m=>add(m.r==='user'?'u':'a',m.t+(m.img?' 📷':'')));
+  if(!st.msgs.length){const h=document.createElement('div');h.className='hint';h.textContent='Namaste! Main DebMitra hoon, tumhara AI dost. Likh ke, bol ke 🎤, ya photo/PDF 📎 bhej ke kuch bhi pooche. ⚙️ se bhasha aur mode badal sakte ho. 😊';chat.appendChild(h);return}
+  st.msgs.forEach(m=>{if(m.r==='user')addUser(m.t+(m.img?' 📷':''));else addBot(m.t)});
 }
 hello();
-$('clr').onclick=()=>{if(!confirm('Poori chat delete kar du?'))return;st={msgs:[],doc:null};pending=null;chip.hidden=true;save();hello();speechSynthesis&&speechSynthesis.cancel()};
-/* speak */
-function updSpk(){$('spk').textContent=speakOn?'🔊':'🔇'}
-$('spk').onclick=()=>{speakOn=!speakOn;updSpk();if(!speakOn&&window.speechSynthesis)speechSynthesis.cancel()};
+/* settings */
+$('selLang').value=set.lang;$('selMode').value=set.mode;
+$('selLang').onchange=e=>{set.lang=e.target.value;saveSet();if(rec&&listening)rec.stop()};
+$('selMode').onchange=e=>{set.mode=e.target.value;saveSet();toast('Mode badal gaya ✅')};
+$('gear').onclick=()=>{$('panel').hidden=!$('panel').hidden};
+$('clr').onclick=()=>{if(!confirm('Poori chat delete kar du?'))return;st={msgs:[],doc:null};pending=null;chip.hidden=true;save();hello();$('panel').hidden=true;window.speechSynthesis&&speechSynthesis.cancel()};
+/* voice output */
+let voices=[],warned={};
+function loadVoices(){try{voices=speechSynthesis.getVoices()}catch(e){}}
+if(window.speechSynthesis){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
+function updSpk(){$('spk').textContent=set.speak?'🔊':'🔇'}updSpk();
+$('spk').onclick=()=>{set.speak=!set.speak;saveSet();updSpk();if(!set.speak&&window.speechSynthesis)speechSynthesis.cancel();toast(set.speak?'Ab jawab bol ke sunaunga 🔊':'Awaaz band 🔇')};
+const norm=l=>String(l).replace('_','-').toLowerCase();
+function ttsLang(t){
+  if(set.lang==='hi')return'hi-IN';if(set.lang==='en')return'en-IN';if(set.lang==='or')return'or-IN';
+  if(/[\u0B00-\u0B7F]/.test(t))return'or-IN';if(/[\u0900-\u097F]/.test(t))return'hi-IN';return'en-IN';
+}
+function pickVoice(lang){
+  const base=lang.split('-')[0],c=voices.filter(v=>norm(v.lang).startsWith(base));
+  if(!c.length)return null;
+  const good=/google|neural|enhanced|natural|wavenet/i;
+  return c.find(v=>good.test(v.name)&&norm(v.lang)===norm(lang))||c.find(v=>good.test(v.name))||c.find(v=>norm(v.lang)===norm(lang))||c[0];
+}
 function speak(t){
-  if(!speakOn||!window.speechSynthesis)return;
+  if(!set.speak||!window.speechSynthesis)return;
   speechSynthesis.cancel();
-  const c=clean(t).replace(/[_`]/g,'').slice(0,900);
-  const u=new SpeechSynthesisUtterance(c);u.lang=/[\u0900-\u097F]/.test(c)?'hi-IN':'en-IN';
-  speechSynthesis.speak(u);
+  const p=plain(t),lang=ttsLang(p),v=pickVoice(lang);
+  if(!v&&!warned[lang]){warned[lang]=1;toast('Is bhasha ki voice phone mein nahi mili. Phone Settings → Google → Speech Services → Text-to-speech mein voice data download karo.')}
+  const parts=p.match(/[^.!?।\n]+[.!?।]?/g)||[p],chunks=[];let cur='';
+  for(const s of parts){if((cur+s).length>170){if(cur)chunks.push(cur);cur=s}else cur+=s}
+  if(cur)chunks.push(cur);
+  chunks.slice(0,14).forEach(c=>{const u=new SpeechSynthesisUtterance(c.trim());u.lang=lang;if(v)u.voice=v;u.rate=0.95;u.pitch=1;speechSynthesis.speak(u)});
 }
 /* voice input */
-$('lang').onclick=()=>{vlang=vlang==='hi-IN'?'en-IN':'hi-IN';$('lang').textContent=vlang==='hi-IN'?'हिं':'EN'};
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,listening=false;
+const recLang=()=>({hi:'hi-IN',en:'en-IN',or:'or-IN',auto:'hi-IN'})[set.lang]||'hi-IN';
 $('mic').onclick=()=>{
-  if(!SR){alert('Is browser mein voice nahi chalta. Chrome use karo.');return}
+  if(!SR){toast('Is browser mein voice nahi chalta. Chrome use karo.');return}
   if(listening){rec&&rec.stop();return}
-  rec=new SR();rec.lang=vlang;rec.interimResults=true;rec.continuous=false;
+  rec=new SR();rec.lang=recLang();rec.interimResults=true;rec.continuous=false;
   rec.onresult=e=>{let t='';for(const r of e.results)t+=r[0].transcript;q.value=t};
-  rec.onerror=()=>{};
-  rec.onend=()=>{listening=false;$('mic').classList.remove('on');if(q.value.trim()){speakOn=true;updSpk();go()}};
+  rec.onerror=ev=>{if(ev.error==='not-allowed')toast('Mic ki permission Allow karo.');else if(ev.error==='language-not-supported')toast('Is bhasha ki voice input phone par nahi chal rahi.')};
+  rec.onend=()=>{listening=false;$('mic').classList.remove('on');q.placeholder='Apna sawaal likho...';if(q.value.trim()){set.speak=true;saveSet();updSpk();go()}};
   listening=true;$('mic').classList.add('on');q.placeholder='Bolo, main sun raha hoon...';
   try{rec.start()}catch(e){listening=false;$('mic').classList.remove('on')}
 };
@@ -123,23 +207,22 @@ function readImg(f){return new Promise((res,rej)=>{const im=new Image(),u=URL.cr
 function loadPdfJs(){return new Promise((res,rej)=>{if(window.pdfjsLib)return res();const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';s.onload=()=>{pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';res()};s.onerror=rej;document.head.appendChild(s)})}
 async function pdfText(f){
   await loadPdfJs();
-  const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;
-  let out='';
+  const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let out='';
   for(let i=1;i<=Math.min(pdf.numPages,25);i++){const pg=await pdf.getPage(i),c=await pg.getTextContent();out+=c.items.map(x=>x.str).join(' ')+'\n';if(out.length>9000)break}
   return out.slice(0,9000).trim();
 }
 $('file').onchange=async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
   try{
-    if(f.type.startsWith('image/')){const d=await readImg(f);pending={type:'img',data:d,name:f.name};$('chipt').textContent='📷 '+f.name}
+    if(f.type.startsWith('image/')){pending={type:'img',data:await readImg(f),name:f.name};$('chipt').textContent='📷 '+f.name}
     else if(f.type==='application/pdf'||/\.pdf$/i.test(f.name)){
       $('chipt').textContent='PDF padh raha hoon...';chip.hidden=false;
       const t=await pdfText(f);
-      if(!t){chip.hidden=true;alert('Is PDF mein text nahi mila (shayad scan ki hui hai).');return}
+      if(!t){chip.hidden=true;toast('Is PDF mein text nahi mila (shayad scan ki hui hai).');return}
       pending={type:'pdf',name:f.name,text:t};$('chipt').textContent='📄 '+f.name
-    }else{alert('Sirf photo ya PDF chalegi.');return}
+    }else{toast('Sirf photo ya PDF chalegi.');return}
     chip.hidden=false;
-  }catch(err){chip.hidden=true;pending=null;alert('File nahi khul paayi, dusri try karo.')}
+  }catch(err){chip.hidden=true;pending=null;toast('File nahi khul paayi, dusri try karo.')}
 };
 /* send */
 function typeOut(el,text){return new Promise(res=>{let i=0;const step=Math.max(1,Math.ceil(text.length/140));const iv=setInterval(()=>{i+=step;el.textContent=text.slice(0,i);scroll();if(i>=text.length){clearInterval(iv);res()}},18)})}
@@ -147,21 +230,22 @@ async function go(){
   if(busy)return;
   let text=q.value.trim();
   if(!text&&!pending)return;
+  const now=Date.now();sent=sent.filter(t=>now-t<60000);
+  if(sent.length>=10){toast('Bahut tez! '+Math.ceil((60000-(now-sent[0]))/1000)+' second ruko, phir bhejo. 🙂');return}
+  sent.push(now);
   const img=pending&&pending.type==='img'?pending.data:null;
   if(pending&&pending.type==='pdf')st.doc={name:pending.name,text:pending.text};
   if(!text)text=img?'Is photo ke baare mein batao.':'Is document ka short summary do.';
   q.value='';q.placeholder='Apna sawaal likho...';pending=null;chip.hidden=true;
   busy=true;send.disabled=true;
   if(window.speechSynthesis)speechSynthesis.cancel();
-  document.querySelector('.hint')&&document.querySelector('.hint').remove();
-  add('u',text,img);
-  st.msgs.push({r:'user',t:text,img:!!img});
-  const out=add('a','');
-  out.querySelector('span').innerHTML='<span class="dots"><i></i><i></i><i></i></span>';
+  const h=document.querySelector('.hint');if(h)h.remove();
+  addUser(text,img);st.msgs.push({r:'user',t:text,img:!!img});
+  const bot=addBot(null);bot.body.innerHTML='<span class="dots"><i></i><i></i><i></i></span>';
   let reply='',err=null;
   try{
-    let r,d;
-    const body=JSON.stringify({messages:st.msgs.map(m=>({role:m.r,content:m.t})),image:img,doc:st.doc});
+    let r,d;const rid=Date.now()+'-'+Math.random().toString(36).slice(2);
+    const body=JSON.stringify({messages:st.msgs.map(m=>({role:m.r,content:m.t})),image:img,doc:st.doc,lang:set.lang,mode:set.mode,rid});
     for(let i=0;i<3;i++){
       r=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body});
       d=await r.json().catch(()=>({error:'Error'}));
@@ -171,9 +255,12 @@ async function go(){
     if(!r.ok)throw new Error(d.error||'Kuch gadbad ho gayi, dobara try karo.');
     reply=d.reply;
   }catch(e){err=e.message||'Kuch gadbad ho gayi, dobara try karo.'}
-  const span=out.querySelector('span');span.textContent='';
-  if(err){span.textContent=err;st.msgs.pop()}
-  else{const c=clean(reply);await typeOut(span,c);st.msgs.push({r:'assistant',t:reply});speak(reply)}
+  if(err){bot.body.textContent=err;st.msgs.pop()}
+  else{
+    bot.body.textContent='';await typeOut(bot.body,plain(reply));
+    bot.body.innerHTML=md(reply);bot.el.appendChild(actions(reply));
+    st.msgs.push({r:'assistant',t:reply});speak(reply);
+  }
   save();busy=false;send.disabled=false;scroll();
 }
 $('f').addEventListener('submit',e=>{e.preventDefault();go()});
