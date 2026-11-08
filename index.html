@@ -18,12 +18,21 @@ header .lg{width:38px;height:38px;border-radius:10px;flex:none}
 header .t{flex:1;font-weight:700;font-size:18px;line-height:1.1}
 header .t small{display:block;font-weight:400;font-size:12px;opacity:.9}
 .hb{background:rgba(255,255,255,.22);border:0;color:#fff;border-radius:50%;width:38px;height:38px;font-size:17px;padding:0;cursor:pointer;flex:none}
-#panel{background:rgba(255,255,255,.92);padding:10px 14px;display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center;font-size:14px;border-bottom:1px solid #e5def5}
+#panel{background:#fff;margin:0 10px;padding:14px;border-radius:0 0 20px 20px;box-shadow:0 10px 28px rgba(80,40,140,.25);display:flex;flex-direction:column;gap:14px}
 #panel[hidden]{display:none}
-#panel select{padding:8px;border-radius:10px;border:2px solid #c4b5fd;background:#fff;font-size:15px;color:#1f1d1a}
-#panel .row{grid-column:1/3;display:flex;gap:8px}
-.pb{flex:1;padding:9px;border-radius:10px;border:2px solid #c4b5fd;background:#fff;color:#6d28d9;font-weight:600;font-size:14px}
-.pb[hidden]{display:none}
+#panel .lab{font-weight:700;font-size:14px;color:#6d28d9;margin-bottom:8px}
+#panel .tip{font-size:12.5px;color:#8a7fa8;margin-top:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{padding:9px 15px;border-radius:20px;border:2px solid #d8ccff;background:#f7f3ff;color:#6d28d9;font-weight:600;font-size:14.5px}
+.chips button.on{background:linear-gradient(135deg,#8b5cf6,#ec4899);color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(139,92,246,.4)}
+#panel .row{display:flex;gap:8px}
+.pb{flex:1;padding:11px;border-radius:14px;border:2px solid #d8ccff;background:#fff;color:#6d28d9;font-weight:700;font-size:14.5px}
+.pb[disabled]{opacity:.7}
+#ibar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:#fff4d6;color:#5b4300;font-size:14px}
+#ibar[hidden]{display:none}
+#ibar span{flex:1}
+#ibar button{background:#f97316;color:#fff;border-radius:14px;padding:6px 14px;font-size:14px}
+#ibar button.x{background:none;color:#5b4300;padding:4px 8px;font-size:17px}
 #chat{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
 .m{max-width:88%;padding:10px 14px;border-radius:16px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;font-size:15.5px}
 .u{align-self:flex-end;background:linear-gradient(135deg,#8b5cf6,#ec4899);color:#fff;border-bottom-right-radius:4px;box-shadow:0 3px 10px rgba(139,92,246,.35)}
@@ -61,8 +70,11 @@ button{border:0;color:#fff;font-weight:600}
 body{background:linear-gradient(160deg,#2a1a3a 0%,#1a2140 50%,#12302b 100%);color:#f1ede6}
 .a{background:#143a42;color:#f1ede6}.a:nth-of-type(3n+2){background:#40321a}.a:nth-of-type(3n+3){background:#15392a}
 .hint{color:#c4b5fd}form{background:rgba(0,0,0,.35)}
-input[type=text],#chip,#panel select,.pb{background:#262320;color:#f1ede6;border-color:#6d28d9}
-#panel{background:rgba(20,16,30,.95);color:#f1ede6;border-color:#38305a}
+input[type=text],#chip{background:#262320;color:#f1ede6;border-color:#6d28d9}
+.pb{background:#262320;color:#e0d4ff;border-color:#6d28d9}
+.chips button{background:#2a2540;color:#e0d4ff;border-color:#4b3b86}
+#ibar{background:#40321a;color:#ffe9b8}#ibar button.x{color:#ffe9b8}
+#panel{background:#1c1730;color:#f1ede6}#panel .lab{color:#c4b5fd}
 .rb{background:#262320;color:#c4b5fd;border-color:#6d28d9}
 }
 </style>
@@ -75,25 +87,31 @@ input[type=text],#chip,#panel select,.pb{background:#262320;color:#f1ede6;border
   <button class="hb" id="gear" title="Settings">⚙️</button>
 </header>
 <div id="panel" hidden>
-  <label for="selLang">Bhasha</label>
-  <select id="selLang">
-    <option value="auto">Auto (jaise main likhun)</option>
-    <option value="hi">हिन्दी</option>
-    <option value="en">English</option>
-    <option value="or">ଓଡ଼ିଆ (Odia)</option>
-  </select>
-  <label for="selMode">Mode</label>
-  <select id="selMode">
-    <option value="friend">😊 Dost</option>
-    <option value="tutor">📚 Padhai ka tutor</option>
-    <option value="coder">💻 Coder</option>
-    <option value="funny">😄 Funny</option>
-  </select>
+  <div>
+    <div class="lab">🌐 Language</div>
+    <div class="chips" id="chLang">
+      <button type="button" data-v="auto">Auto</button>
+      <button type="button" data-v="hi">हिन्दी</button>
+      <button type="button" data-v="en">English</button>
+      <button type="button" data-v="or">ଓଡ଼ିଆ</button>
+    </div>
+    <div class="tip">Auto: tum jis bhasha mein likho, DebMitra usi mein jawab dega.</div>
+  </div>
+  <div>
+    <div class="lab">🎭 Mode</div>
+    <div class="chips" id="chMode">
+      <button type="button" data-v="friend">😊 Friend</button>
+      <button type="button" data-v="tutor">📚 Tutor</button>
+      <button type="button" data-v="coder">💻 Coder</button>
+      <button type="button" data-v="funny">😄 Funny</button>
+    </div>
+  </div>
   <div class="row">
-    <button type="button" class="pb" id="inst" hidden>📲 App install</button>
-    <button type="button" class="pb" id="clr">🗑 Nayi chat</button>
+    <button type="button" class="pb" id="inst">📲 Install app</button>
+    <button type="button" class="pb" id="clr">🗑 New chat</button>
   </div>
 </div>
+<div id="ibar" hidden><span>📲 DebMitra ko app ki tarah install karo</span><button type="button" id="ibtn">Install</button><button type="button" class="x" id="ix">✕</button></div>
 <div id="chat"></div>
 <div id="chip" hidden><span id="chipt"></span><button type="button" id="chipx">✕</button></div>
 <form id="f">
@@ -155,9 +173,10 @@ function hello(){
 }
 hello();
 /* settings */
-$('selLang').value=set.lang;$('selMode').value=set.mode;
-$('selLang').onchange=e=>{set.lang=e.target.value;saveSet();if(rec&&listening)rec.stop()};
-$('selMode').onchange=e=>{set.mode=e.target.value;saveSet();toast('Mode badal gaya ✅')};
+function paintChips(){document.querySelectorAll('#chLang button').forEach(b=>b.classList.toggle('on',b.dataset.v===set.lang));document.querySelectorAll('#chMode button').forEach(b=>b.classList.toggle('on',b.dataset.v===set.mode))}
+document.querySelectorAll('#chLang button').forEach(b=>b.onclick=()=>{set.lang=b.dataset.v;saveSet();paintChips();if(rec&&listening)rec.stop();toast('Language badal gayi ✅')});
+document.querySelectorAll('#chMode button').forEach(b=>b.onclick=()=>{set.mode=b.dataset.v;saveSet();paintChips();toast('Mode badal gaya ✅')});
+paintChips();
 $('gear').onclick=()=>{$('panel').hidden=!$('panel').hidden};
 $('clr').onclick=()=>{if(!confirm('Poori chat delete kar du?'))return;st={msgs:[],doc:null};pending=null;chip.hidden=true;save();hello();$('panel').hidden=true;window.speechSynthesis&&speechSynthesis.cancel()};
 /* voice output */
@@ -177,15 +196,28 @@ function pickVoice(lang){
   const good=/google|neural|enhanced|natural|wavenet/i;
   return c.find(v=>good.test(v.name)&&norm(v.lang)===norm(lang))||c.find(v=>good.test(v.name))||c.find(v=>norm(v.lang)===norm(lang))||c[0];
 }
+function ttsSegments(sentence,main){
+  if(main==='en-IN')return[{t:sentence,l:'en-IN'}];
+  const out=[];
+  sentence.split(/([A-Za-z][A-Za-z0-9'’+&\-]*(?:[ ,.\-]+[A-Za-z0-9][A-Za-z0-9'’+&\-]*)*)/).forEach((p,i)=>{
+    if(!p||!/[\p{L}\p{N}]/u.test(p))return;
+    out.push({t:p,l:i%2?'en-IN':main});
+  });
+  return out;
+}
 function speak(t){
   if(!set.speak||!window.speechSynthesis)return;
   speechSynthesis.cancel();
-  const p=plain(t),lang=ttsLang(p),v=pickVoice(lang);
-  if(!v&&!warned[lang]){warned[lang]=1;toast('Is bhasha ki voice phone mein nahi mili. Phone Settings → Google → Speech Services → Text-to-speech mein voice data download karo.')}
-  const parts=p.match(/[^.!?।\n]+[.!?।]?/g)||[p],chunks=[];let cur='';
-  for(const s of parts){if((cur+s).length>170){if(cur)chunks.push(cur);cur=s}else cur+=s}
-  if(cur)chunks.push(cur);
-  chunks.slice(0,14).forEach(c=>{const u=new SpeechSynthesisUtterance(c.trim());u.lang=lang;if(v)u.voice=v;u.rate=0.95;u.pitch=1;speechSynthesis.speak(u)});
+  const p=plain(t).replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu,''),main=ttsLang(p),vm=pickVoice(main);
+  if(!vm&&!warned[main]){warned[main]=1;toast('Is bhasha ki voice phone mein nahi mili. Phone Settings → Google → Speech Services → Text-to-speech mein voice data download karo.')}
+  const vc={};const vFor=l=>l in vc?vc[l]:(vc[l]=pickVoice(l));
+  const sents=p.match(/[^.!?।\n]+[.!?।]?/g)||[p],q2=[];
+  for(const s of sents)for(const seg of ttsSegments(s,main)){
+    let txt=seg.t.trim();
+    while(txt.length>170){let k=txt.lastIndexOf(' ',170);if(k<60)k=170;q2.push({t:txt.slice(0,k),l:seg.l});txt=txt.slice(k).trim()}
+    if(txt)q2.push({t:txt,l:seg.l});
+  }
+  q2.slice(0,45).forEach(c=>{const u=new SpeechSynthesisUtterance(c.t);u.lang=c.l;const v=vFor(c.l);if(v)u.voice=v;u.rate=0.95;u.pitch=1;speechSynthesis.speak(u)});
 }
 /* voice input */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,listening=false;
@@ -241,12 +273,12 @@ async function go(){
   if(window.speechSynthesis)speechSynthesis.cancel();
   const h=document.querySelector('.hint');if(h)h.remove();
   addUser(text,img);st.msgs.push({r:'user',t:text,img:!!img});
-  const bot=addBot(null);bot.body.innerHTML='<span class="dots"><i></i><i></i><i></i></span>';
+  const bot=addBot(null);bot.body.innerHTML='<span class="dots"><i></i><i></i><i></i></span>'+(img?' <small>Photo dekh raha hoon...</small>':'');
   let reply='',err=null;
   try{
     let r,d;const rid=Date.now()+'-'+Math.random().toString(36).slice(2);
     const body=JSON.stringify({messages:st.msgs.map(m=>({role:m.r,content:m.t})),image:img,doc:st.doc,lang:set.lang,mode:set.mode,rid});
-    for(let i=0;i<3;i++){
+    for(let i=0;i<(img?2:3);i++){
       r=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body});
       d=await r.json().catch(()=>({error:'Error'}));
       if(r.ok||(r.status!==503&&r.status!==500))break;
@@ -266,8 +298,18 @@ async function go(){
 $('f').addEventListener('submit',e=>{e.preventDefault();go()});
 /* install + sw */
 let dp=null;
-addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;$('inst').hidden=false});
-$('inst').onclick=async()=>{if(!dp)return;dp.prompt();await dp.userChoice;dp=null;$('inst').hidden=true};
+const isApp=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+function updInst(){const b=$('inst');if(isApp()){b.textContent='✅ App installed';b.disabled=true}else{b.textContent='📲 Install app';b.disabled=false}}
+updInst();
+async function doInstall(){
+  if(isApp())return;
+  if(dp){dp.prompt();const r=await dp.userChoice;dp=null;$('ibar').hidden=true;if(r.outcome==='accepted')toast('Install ho raha hai ✅');return}
+  toast(/iphone|ipad|ipod/i.test(navigator.userAgent)?'Safari mein Share ⬆️ dabao, phir "Add to Home Screen".':'Chrome ke ⋮ menu mein "Install app" ya "Add to Home screen" dabao.');
+}
+$('inst').onclick=doInstall;$('ibtn').onclick=doInstall;
+$('ix').onclick=()=>{$('ibar').hidden=true;try{localStorage.setItem('debmitra_ibar','1')}catch(e){}};
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;let off=false;try{off=localStorage.getItem('debmitra_ibar')}catch(x){}if(!off&&!isApp())$('ibar').hidden=false});
+addEventListener('appinstalled',()=>{dp=null;$('ibar').hidden=true;updInst();toast('App install ho gaya 🎉')});
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
 </script>
 </body>
